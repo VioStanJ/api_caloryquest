@@ -7,6 +7,7 @@ use App\Mail\SendOTP;
 use Illuminate\Http\Request;
 use App\Models\LoginOtp;
 use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -16,8 +17,16 @@ class AuthController extends Controller
             'email'=>'required'
         ]);
 
-        Mail::to($request->email)->send(new SendOTP(createOtp(6)));
+        $otp = createOtp(6);
 
-        return response()->json([$request->all()], 200);
+        LoginOtp::create([
+            'email'=>$request->email,
+            'otp'=>$otp,
+            'expired_date'=>Carbon::now()->addMinutes(5)
+        ]);
+
+        Mail::to($request->email)->send(new SendOTP($otp));
+
+        return response()->json(['success'=>true,'message'=>__('messages.otp_sent')], 200);
     }
 }
